@@ -1,0 +1,16 @@
+NAN    START    600    NAN    NAN
+NAN    MOVER    AREG   Y      NAN
+LOOP   PRINT    NAN    Y      NAN
+NAN    ADD      CREG   ='4'   NAN
+NAN    SUB      CREG   Z      NAN
+NAN    COMP     BREG   ='28'  NAN
+NAN    LTORG    NAN    NAN    NAN
+Y      DS       7      NAN    NAN
+LABEL  EQU      LOOP   NAN    NAN
+L1     MULT     CREG   ='3'   NAN
+NAN    SUB      BREG   ='64'  NAN
+NAN    LTORG    NAN    NAN    NAN
+Z      DC       NAN    22     NAN
+NAN    MOVEM    BREG   ='5'   NAN
+X      DC       NAN    15     NAN
+NAN    END      NAN    NAN    NAN
