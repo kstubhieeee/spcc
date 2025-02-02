@@ -17,7 +17,7 @@ python pass2.py
 ![image](https://github.com/user-attachments/assets/ac883ec1-c610-45e6-8ce5-0465eb246007)
 
 ### Input file
-![image](https://github.com/user-attachments/assets/ee4fb0c7-b91f-4844-bdeb-499bb8f0aec4)
+![image](https://github.com/user-attachments/assets/7b87f43c-9943-49c4-b002-6e09651af55c)
 
 ### Intermediate Code file
 ![image](https://github.com/user-attachments/assets/3c17a8a6-43be-44b2-810e-dd5c61e20197)
