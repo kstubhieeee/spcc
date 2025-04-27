@@ -3,6 +3,11 @@
 python exp4.py
 ```
 
+### Exp 5
+```
+python exp5.py
+```
+
 ### Exp 6
 ```
 python exp6.py
