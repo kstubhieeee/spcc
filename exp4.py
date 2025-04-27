@@ -1,4 +1,3 @@
-# Grammar rules
 productions = {
     'E': ["T E'"],
     "E'": ["+ T E'", 'ε'],
@@ -7,167 +6,135 @@ productions = {
     'F': ["( E )", 'i']
 }
 
-# Function to compute FIRST sets
 def compute_first(productions):
     FIRST = {nt: set() for nt in productions}
-
     def first(symbol):
-        if symbol not in productions:  # Terminal
-            return {symbol}
-        if FIRST[symbol]:  # Already computed
-            return FIRST[symbol]
+        if symbol not in productions: return {symbol}
+        if FIRST[symbol]: return FIRST[symbol]
         result = set()
         for rule in productions[symbol]:
-            for sub_symbol in rule.split():
-                sub_first = first(sub_symbol)
-                result.update(sub_first - {'ε'})
-                if 'ε' not in sub_first:
-                    break
+            for sym in rule.split():
+                res = first(sym)
+                result.update(res - {'ε'})
+                if 'ε' not in res: break
             else:
                 result.add('ε')
         FIRST[symbol] = result
         return result
-
-    for nt in productions:
-        first(nt)
+    for nt in productions: first(nt)
     return FIRST
 
-# Function to compute FOLLOW sets
 def compute_follow(productions, FIRST):
     FOLLOW = {nt: set() for nt in productions}
-    start_symbol = next(iter(productions))
-    FOLLOW[start_symbol].add('$')  # Start symbol has '$' in FOLLOW
-
+    FOLLOW[next(iter(productions))].add('$')
     def follow(nt):
         for lhs, rules in productions.items():
             for rule in rules:
                 symbols = rule.split()
                 for i, symbol in enumerate(symbols):
                     if symbol == nt:
-                        if i + 1 < len(symbols):  # If there's a symbol after nt
-                            next_symbol = symbols[i + 1]
-                            if next_symbol in productions:  # Non-terminal
-                                FOLLOW[nt].update(FIRST[next_symbol] - {'ε'})
-                                if 'ε' in FIRST[next_symbol]:
+                        if i + 1 < len(symbols):
+                            next_sym = symbols[i + 1]
+                            if next_sym in productions:
+                                FOLLOW[nt].update(FIRST[next_sym] - {'ε'})
+                                if 'ε' in FIRST[next_sym]:
                                     FOLLOW[nt].update(FOLLOW[lhs])
-                            else:  # Terminal
-                                FOLLOW[nt].add(next_symbol)
-                        else:  # nt is at the end
+                            else:
+                                FOLLOW[nt].add(next_sym)
+                        else:
                             FOLLOW[nt].update(FOLLOW[lhs])
-
-    for _ in range(len(productions)):  # Iterate multiple times to propagate
-        for nt in productions:
-            follow(nt)
+    for _ in range(len(productions)):
+        for nt in productions: follow(nt)
     return FOLLOW
 
-FIRST = compute_first(productions)
-FOLLOW = compute_follow(productions, FIRST)
-
-# Predictive Parsing Table
 def construct_parsing_table(productions, FIRST, FOLLOW):
-    parsing_table = {}
+    table = {}
     for lhs, rules in productions.items():
         for rule in rules:
             rule_first = set()
             for symbol in rule.split():
-                if symbol in productions:
-                    rule_first.update(FIRST[symbol] - {'ε'})
-                else:
-                    rule_first.add(symbol)
-                if 'ε' not in FIRST.get(symbol, {}):
-                    break
+                if symbol in FIRST: rule_first.update(FIRST[symbol] - {'ε'})
+                else: rule_first.add(symbol)
+                if 'ε' not in FIRST.get(symbol, {}): break
             else:
                 rule_first.add('ε')
-
             for terminal in rule_first:
                 if terminal != 'ε':
-                    parsing_table[(lhs, terminal)] = rule
+                    table[(lhs, terminal)] = rule
             if 'ε' in rule_first:
                 for terminal in FOLLOW[lhs]:
-                    parsing_table[(lhs, terminal)] = rule
-    return parsing_table
+                    table[(lhs, terminal)] = rule
+    return table
 
-parsing_table = construct_parsing_table(productions, FIRST, FOLLOW)
+def display_sets(FIRST, FOLLOW):
+    print("\nFIRST Sets:")
+    for nt, s in FIRST.items():
+        print(f"FIRST({nt}) = {s}")
+    print("\nFOLLOW Sets:")
+    for nt, s in FOLLOW.items():
+        print(f"FOLLOW({nt}) = {s}")
 
-# Display FIRST sets
-print("\nFIRST Sets:")
-for nt, first_set in FIRST.items():
-    print(f"FIRST({nt}) = {first_set}")
-
-# Display FOLLOW sets
-print("\nFOLLOW Sets:")
-for nt, follow_set in FOLLOW.items():
-    print(f"FOLLOW({nt}) = {follow_set}")
-
-# Display Predictive Parsing Table
-print("\nPredictive Parsing Table:")
-non_terminals = list(productions.keys())
-terminals = sorted(set(
-    symbol for rules in productions.values()
-    for rule in rules for symbol in rule.split() if symbol not in productions
-))
-terminals.append('$')
-
-# Print table header
-print(f"{'':<10}", end="")
-for t in terminals:
-    print(f"{t:<10}", end="")
-print("\n" + "-" * (len(terminals) * 10))
-
-# Print table rows
-for nt in non_terminals:
-    print(f"{nt:<10}", end="")
+def display_parsing_table(table, productions):
+    non_terminals = list(productions.keys())
+    terminals = sorted(set(
+        symbol for rules in productions.values()
+        for rule in rules for symbol in rule.split() if symbol not in productions
+    )) + ['$']
+    print("\nParsing Table:")
+    print(f"{'':<10}", end="")
     for t in terminals:
-        rule = parsing_table.get((nt, t), "")
-        print(f"{rule:<10}", end="")
-    print()
+        print(f"{t:<10}", end="")
+    print("\n" + "-" * (len(terminals) * 10))
+    for nt in non_terminals:
+        print(f"{nt:<10}", end="")
+        for t in terminals:
+            rule = table.get((nt, t), '')
+            print(f"{rule:<10}", end="")
+        print()
 
-# Function to parse input
 def parse_input(input_string, parsing_table):
-    stack = ['$', 'E']  # Start with the end marker and the start symbol
-    input_tokens = input_string.split() + ['$']  # Tokenize input and add end marker
-    index = 0  # Pointer for input tokens
-
+    stack = ['$', 'E']
+    tokens = input_string.split() + ['$']
+    index = 0
     print("\nParsing Steps:")
-    print(f"{'Stack':<30} {'Input':<30} {'Action'}")
-    print("-" * 80)
+    print(f"{'Stack':<20} {'Input':<20} {'Action'}")
+    print("-" * 60)
 
     while stack:
-        stack_top = stack[-1]
-        current_input = input_tokens[index]
-
-        print(f"{' '.join(stack):<30} {' '.join(input_tokens[index:]):<30}", end=' ')
-
-        if stack_top == current_input:  # Match terminal
+        top = stack[-1]
+        current = tokens[index]
+        print(f"{' '.join(stack):<20} {' '.join(tokens[index:]):<20}", end=' ')
+        if top == current:
             stack.pop()
             index += 1
             print("Pop")
-            if current_input == '$':
-                print("Input Accepted Successfully!")
-                return True
-        elif stack_top in productions:  # Non-terminal
-            rule = parsing_table.get((stack_top, current_input))
+        elif top in productions:
+            rule = parsing_table.get((top, current))
             if rule:
                 stack.pop()
-                # Push rule symbols in reverse order (except ε)
-                for symbol in reversed(rule.split()):
-                    if symbol != 'ε':
-                        stack.append(symbol)
-                print(f"Apply {stack_top} -> {rule}")
+                for sym in reversed(rule.split()):
+                    if sym != 'ε': stack.append(sym)
+                print(f"Apply {top} -> {rule}")
             else:
-                print("Error: No rule found for", (stack_top, current_input))
+                print("Error: No rule")
                 return False
-        else:  # Stack top is terminal but not matching
-            print("Error: Unexpected symbol", current_input)
+        else:
+            print("Error: Mismatch")
             return False
 
-    if index == len(input_tokens):
-        print("Parsing completed!")
+    if index == len(tokens):
+        print("Input Accepted!")
         return True
     else:
         print("Error: Input not fully consumed")
         return False
 
-# Example input to parse
-input_string = "i + i"  # Change this to test different inputs
+FIRST = compute_first(productions)
+FOLLOW = compute_follow(productions, FIRST)
+parsing_table = construct_parsing_table(productions, FIRST, FOLLOW)
+
+display_sets(FIRST, FOLLOW)
+display_parsing_table(parsing_table, productions)
+
+input_string = "i + i"
 parse_input(input_string, parsing_table)
